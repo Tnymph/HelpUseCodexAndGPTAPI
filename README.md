@@ -1,3 +1,4 @@
+注意，项目所有内容均来自DeepSeek4.1flash的许愿式生成
 # HelpUseCodexAndGPTAPI —— ChatGPT 中国网络环境一键配置
 
 本项目的目标：让 **ChatGPT 桌面软件** 在国内环境下**全程通过美国静态 IP** 使用，并提供"一键启动 / 一键关闭"两个程序。
