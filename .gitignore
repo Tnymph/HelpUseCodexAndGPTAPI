@@ -1,0 +1,14 @@
+# 运行时状态与日志（含本机信息，不发布）
+state/
+
+# 本机私密参数（静态 IP / 工作区 ID 等真实值）
+src/config.local.js
+
+# 工具产生的临时文件
+_tmp_*
+_test_*
+
+# 其它
+node_modules/
+.mimosa/
+*.log
