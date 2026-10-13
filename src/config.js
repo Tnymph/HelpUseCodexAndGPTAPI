@@ -47,6 +47,9 @@ const baseConfig = {
     directProxy: null,            // { server, port, username, password }；真实值放 config.local.js
     directNodeName: 'GPT-US-Direct',
     directJumpGroup: 'GPT-US-Jump',
+    // 程序A 每次运行把代理组选择钉在这个节点上（留空 = 钉在 nodeName）。
+    // 想默认走"直连静态 IP"（不依赖 Roxy/roxynet）时，在 config.local.js 里填 'GPT-US-Direct'。
+    pinNode: '',
     // 代理组策略：
     //   'select'   = 严格只用美国静态 IP（当前设置）：组里只有静态节点，选择被程序钉死；
     //                静态通道不通时 GPT 会直接连不上，绝不用其它任何 IP

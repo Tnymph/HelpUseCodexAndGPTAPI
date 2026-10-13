@@ -30,6 +30,8 @@ module.exports = {
   //     username: process.env.GPT_PROXY_USER || '',
   //     password: process.env.GPT_PROXY_PASSWORD || '',
   //   },
+  //   // （可选）把默认通道切成"直连静态 IP"（不依赖 Roxy 窗口 / roxynet 动态端口）：
+  //   // pinNode: 'GPT-US-Direct',
   // },
   // 其它可选覆盖，例如：
   // clash: { appExe: 'E:\\Clash Verge\\clash-verge.exe' },

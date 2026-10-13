@@ -245,8 +245,9 @@ async function step6StaticChannel() {
   }
   if (config.clash.groupType === 'fallback') await verify.refreshGroupHealth();
   const now = await verify.getGroupNow();
-  if (now === config.clash.nodeName) log.ok(`GPT-US 组生效节点：${now}`);
-  else if (now) log.warn(`GPT-US 组当前生效节点：${now}（预期应为 ${config.clash.nodeName}）`);
+  const target = clashProfile.pinTargetName();
+  if (now === target) log.ok(`GPT-US 组生效节点：${now}`);
+  else if (now) log.warn(`GPT-US 组当前生效节点：${now}（预期应为 ${target}）`);
   return true;
 }
 
@@ -334,9 +335,10 @@ async function step8ClashReady(profileChanged) {
   if (tun) log.ok('TUN 网卡已就绪（Rust 后端与一切子进程都会被代理接管）');
   else log.warn('未检测到 TUN 网卡：codex 后端可能不走代理，请检查 Clash Verge 的 TUN 开关与管理员权限');
   log.ok(`节点 ${config.clash.nodeName} 与组 ${config.clash.groupName} 已加载（组当前选择：${nodes.groupNow}）`);
-  if (config.clash.groupType === 'select' && nodes.groupNow !== config.clash.nodeName) {
-    const r = await clashApi.selectProxy(config.clash.groupName, config.clash.nodeName);
-    if (r.status === 204) log.ok(`严格模式：已把 ${config.clash.groupName} 的选择钉在 ${config.clash.nodeName}`);
+  const target = clashProfile.pinTargetName();
+  if (config.clash.groupType === 'select' && nodes.groupNow !== target) {
+    const r = await clashApi.selectProxy(config.clash.groupName, target);
+    if (r.status === 204) log.ok(`严格模式：已把 ${config.clash.groupName} 的选择钉在 ${target}`);
     else log.warn(`严格模式：钉住节点选择失败（HTTP ${r.status}）`);
   }
   return nodes;
@@ -433,8 +435,9 @@ async function step12FinalVerify() {
   }
 
   facts.groupNow = await verify.getGroupNow();
-  if (facts.groupNow === config.clash.nodeName) log.ok(`当前生效节点：${facts.groupNow}（美国静态 IP）`);
-  else if (facts.groupNow) log.warn(`当前生效节点：${facts.groupNow}（备用节点；静态 IP 通道当时不可用）`);
+  const target = clashProfile.pinTargetName();
+  if (facts.groupNow === target) log.ok(`当前生效节点：${facts.groupNow}（美国静态 IP）`);
+  else if (facts.groupNow) log.warn(`当前生效节点：${facts.groupNow}（不是预期的 ${target}）`);
 
   const proof = await verify.waitFor('ChatGPT 应用流量分流证据', 20000, () => verify.chatgptAppTrafficProof());
   facts.appProof = proof;
@@ -456,8 +459,9 @@ function summary(ok) {
   }
   log.plain(ok ? '  结果：GPT 已启动，网络环境就绪' : '  结果：存在未完成的步骤，请查看上面的错误信息');
   log.plain('============================================================');
+  const pinTarget = clashProfile.pinTargetName();
   log.plain(`  · 美国静态 IP 出口     ：${facts.staticIp || '（未验证）'}${facts.staticOrg ? '（' + facts.staticOrg + '）' : ''}`);
-  log.plain(`  · 当前生效节点         ：${facts.groupNow || '（未知）'}${facts.groupNow === config.clash.nodeName ? '  ← 美国静态 IP' : ''}`);
+  log.plain(`  · 当前生效节点         ：${facts.groupNow || '（未知）'}${facts.groupNow === pinTarget ? '  ← 美国静态 IP' : ''}`);
   log.plain(`  · 节点测速             ：${facts.delayMs ? facts.delayMs + ' ms' : '（未通过/未测）'}`);
   log.plain(`  · 实测出口（规则路径） ：${facts.egress ? facts.egress.ip + '（' + facts.egress.country + '）' : '（未执行）'}`);
   log.plain(`  · 分流证据             ：${facts.routing ? facts.routing.chains.join(' → ') : '（未观察到）'}`);

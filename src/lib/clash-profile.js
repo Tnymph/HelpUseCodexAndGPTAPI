@@ -20,6 +20,15 @@ function hasDirectProxy() {
 }
 
 /**
+ * 程序A 要钉住的节点名：config.clash.pinNode（留空则 nodeName）。
+ * 若 pinNode 指定的是直连节点、但直连未配置，则回退 nodeName（避免钉到一个不存在的节点）。
+ */
+function pinTargetName() {
+  if (C.pinNode && C.pinNode === C.directNodeName && !hasDirectProxy()) return C.nodeName;
+  return C.pinNode || C.nodeName;
+}
+
+/**
  * 「直连静态 IP」节点：不经 Roxy/roxynet，直接连服务商的 socks5 静态代理。
  * 建连走 dialer-proxy（= GPT-US-Jump 跳板组，默认 DIRECT）——
  * 哪天国内直连被阻断，把跳板组切到订阅美国节点即可，不必改这里。
@@ -56,8 +65,15 @@ function buildNodeYaml(port, dirId) {
 }
 
 function buildGroupYaml(backupNode) {
-  const members = [`${C.nodeName}`];
-  if (hasDirectProxy()) members.push(C.directNodeName);
+  // 钉住的目标节点排第一位：即使内核重置了组选择，默认也走它
+  const target = pinTargetName();
+  const members = [];
+  if (target === C.directNodeName && hasDirectProxy()) {
+    members.push(C.directNodeName, C.nodeName);
+  } else {
+    members.push(C.nodeName);
+    if (hasDirectProxy()) members.push(C.directNodeName);
+  }
   if (C.groupType === 'fallback' && backupNode && backupNode !== C.nodeName) members.push(`'${backupNode}'`);
   const lines = [
     '# Managed by HelpUseCodexAndGPTAPI (program A). 由程序A自动生成，请勿手改。',
@@ -136,4 +152,4 @@ function syncProfile(port, dirId, backupNode) {
   return { changed, unchanged };
 }
 
-module.exports = { syncProfile, slotPath, buildNodeYaml, buildGroupYaml, buildRulesYaml, hasDirectProxy };
+module.exports = { syncProfile, slotPath, buildNodeYaml, buildGroupYaml, buildRulesYaml, hasDirectProxy, pinTargetName };
