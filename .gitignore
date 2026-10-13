@@ -8,6 +8,9 @@ src/config.local.js
 _tmp_*
 _test_*
 
+# 服务商导出的代理凭据文件（形如 "Proxies 20261013_202637.txt"）
+Proxies*.txt
+
 # 其它
 node_modules/
 .mimosa/

@@ -98,6 +98,12 @@ rem 然后编辑 config.local.js，填入你的窗口名 / 工作区 ID / 静态
 
 `skills\04-本机软件与文件地址清单.md` 里的路径与端口清单是本机实测快照，换机器后按同法核对即可。
 
+本仓库自带**提交前脱敏扫描**（`.githooks/pre-commit`）：每次提交自动核对"暂存的新增内容 + 文件名 + 被 .gitignore 忽略却被强加的文件"，命中静态 IP / 代理凭据 / 机器名等敏感值即拒绝提交。克隆到新机器后启用一次：
+
+```bat
+git config core.hooksPath .githooks
+```
+
 ## 安全说明
 
 - 本程序只读写"本机自己的"配置：Clash 扩展文件（覆盖前自动备份为 `*.gptproxy-backup`）、系统代理注册表、ChatGPT 自启任务状态、以及项目自己的进程/窗口。

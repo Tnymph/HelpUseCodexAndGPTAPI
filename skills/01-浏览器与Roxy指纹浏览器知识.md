@@ -46,7 +46,7 @@
 E:\RoxyBrowser\RoxyBrowser.exe            # Electron 外壳（主窗口 = 账号/窗口管理/设置）
   ├─ 本地服务 :::45535 (HTTP) / :::45536 (WS)     # 界面 SPA + 内部接口(/api, /tunnel)
   ├─ %APPDATA%\RoxyBrowser\chrome-bin\154\RoxyChrome.exe   # 每个指纹窗口一个实例
-  │     └─ --user-data-dir=%APPDATA%\RoxyBrowser\browser-cache\<dirId>
+  │     └─ --user-data-dir=<缓存根>\<dirId>   # 本机 2026-10-13 起缓存根 = E:\BrowserCache（原 %APPDATA%\RoxyBrowser\browser-cache）
   │           └─ lumi.conf   # 指纹 + 代理（加密）
   └─ %APPDATA%\RoxyBrowser\roxynet-bin\roxynet.exe          # 本地代理前哨
         ├─ :::56632  混合代理口（HTTP CONNECT + SOCKS5，需用户名=密码=dirId 认证）
@@ -95,7 +95,7 @@ curl -x "http://<窗口dirId>:<窗口dirId>@127.0.0.1:56632" https://ipinfo.io/j
 
 ### 2.4b 程序化开关窗口的可靠性（实测经验）
 
-- **识别"窗口是否已打开"要用 dirId，不要只看窗口标题**：指纹窗口的标题由页面决定，可能被改写/瞬时为空——本机实测出现过标题读不到、但窗口其实一直开着的情况。可靠做法：从 RoxyChrome **主进程**（命令行不含 `--type=`）的 `--user-data-dir=...\browser-cache\<dirId>` 解析出 dirId。
+- **识别"窗口是否已打开"要用 dirId，不要只看窗口标题**：指纹窗口的标题由页面决定，可能被改写/瞬时为空——本机实测出现过标题读不到、但窗口其实一直开着的情况。可靠做法：从 RoxyChrome **主进程**（命令行不含 `--type=`）的 `--user-data-dir=<缓存根>\<dirId>` 解析出 dirId（只看结尾的 32 位十六进制目录名，**不依赖缓存根路径**——Roxy 把缓存改到 E:\BrowserCache 后仍可识别）。
 - **未文档化 CLI 的局限**：`RoxyBrowser.exe --roxy-action launch-browser --dir-id <dirId> --workspace-id <wid>` 在"主程序已经在运行"时是以 second-instance 方式送达，实测**不稳定**（日志里能看到 argv 被错误解析，窗口不一定打开）。可靠场景是"用 CLI 作为主程序的首次启动参数"。窗口确实关着时，程序会尝试它；仍失败则提示用户手动打开，或建议开启 Roxy 本地 API（官方 50000 端口的 `/browser/open`）。
 
 ### 2.4c 建链时机（实测踩坑）：roxynet 的"上游跳板"依赖当时的系统代理

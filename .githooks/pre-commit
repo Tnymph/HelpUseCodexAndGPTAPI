@@ -1,0 +1,7 @@
+#!/bin/sh
+# 提交前脱敏扫描：拒绝把敏感值（静态 IP / 代理凭据 / 机器名 / 用户名等）带进仓库。
+# 本仓库用 core.hooksPath 启用；克隆到新机器后执行一次：
+#   git config core.hooksPath .githooks
+# 误报时可 git commit --no-verify 跳过。
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 1
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/tools/scan-staged.ps1"

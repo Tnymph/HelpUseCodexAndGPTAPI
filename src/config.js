@@ -40,6 +40,13 @@ const baseConfig = {
     // 自定义节点 / 代理组（ASCII 名称，避免编码问题）
     nodeName: 'GPT-US-Static',
     groupName: 'GPT-US',
+    // 「直连静态 IP」节点（可选）：填了 config.local.js 的 clash.directProxy 后，
+    // 程序会把一个直连 socks5 静态代理的节点和一个"跳板兜底"组写进 Clash：
+    //   GPT-US-Direct  —— 不经 Roxy/roxynet，直接连静态代理（与 GPT-US-Static 出口同一个 IP）
+    //   GPT-US-Jump    —— GPT-US-Direct 的建连跳板组，默认 DIRECT；直连被墙时可在 Clash 界面切到订阅美国节点
+    directProxy: null,            // { server, port, username, password }；真实值放 config.local.js
+    directNodeName: 'GPT-US-Direct',
+    directJumpGroup: 'GPT-US-Jump',
     // 代理组策略：
     //   'select'   = 严格只用美国静态 IP（当前设置）：组里只有静态节点，选择被程序钉死；
     //                静态通道不通时 GPT 会直接连不上，绝不用其它任何 IP
@@ -77,7 +84,9 @@ const baseConfig = {
     workspaceId: '',               // Roxy 工作区 ID：属于本机私密参数，见 config.local.example.js
     localHttpPort: 45535,               // Roxy 本地服务（用于确认主程序已起）
     userDataDir: path.join(APPDATA, 'RoxyBrowser'),
-    browserCacheDir: path.join(APPDATA, 'RoxyBrowser', 'browser-cache'),
+    browserCacheDir: path.join(APPDATA, 'RoxyBrowser', 'browser-cache'), // 默认缓存根目录
+    // 额外候选缓存根目录列表：Roxy 在设置里把缓存改到其它盘时（如 E:\BrowserCache），在 config.local.js 里补充
+    browserCacheDirsExtra: [],
     // lumi.conf 解密参数（AES-256-GCM，硬编码于 Roxy 内核）
     lumiKey: '402ead7d23b43b6d1e0528d4f99c59bd',
     lumiIv: '3a105229aa31',

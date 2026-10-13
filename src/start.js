@@ -138,10 +138,11 @@ async function ensureRoxyWindow(dirId) {
 
 async function step4EnsureWindow() {
   log.step(4, `确保指纹窗口「${config.roxy.windowName}」已打开`);
-  const dirId = roxynet.findDirIdByWindowName(config.roxy.windowName);
+  const dirId = await roxynet.findDirIdByWindowName(config.roxy.windowName);
   if (!dirId) {
     return fatal(`找不到窗口「${config.roxy.windowName}」（本地数据里没有该窗口）`, [
       '请在 Roxy 里确认窗口名，或修改 src\\config.js 中的 windowName',
+      '若你改过 Roxy 的缓存目录（设置 → 缓存/数据目录）：请把新位置填进 src\\config.local.js 的 browserCacheDirsExtra 数组后重试',
     ]);
   }
   facts.dirId = dirId;
@@ -275,6 +276,14 @@ async function step7SyncProfile() {
   } else {
     log.ok(`已更新 ${result.changed.length} 个扩展文件：${result.changed.join(', ')}`);
     log.info('（原文件已备份为 *.gptproxy-backup）');
+  }
+  if (clashProfile.hasDirectProxy()) {
+    const d = config.clash.directProxy;
+    if (!d.username || !d.password) {
+      log.warn(`直连节点 ${config.clash.directNodeName} 未带账号/密码（若该代理需要认证，请重新运行 tools\\import-static-proxy.ps1 或检查环境变量 GPT_PROXY_USER / GPT_PROXY_PASSWORD）`);
+    } else {
+      log.info(`直连静态 IP 节点 ${config.clash.directNodeName} 已同步（与 ${config.clash.nodeName} 出口同一 IP，可在 Clash 界面切换）`);
+    }
   }
   return result;
 }

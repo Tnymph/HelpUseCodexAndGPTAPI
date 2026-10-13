@@ -14,8 +14,32 @@ function slotPath(fileName) {
   return path.join(C.dataDir, 'profiles', fileName);
 }
 
+/** 是否配置了「直连静态 IP」代理（config.local.js 的 clash.directProxy，凭据来自环境变量） */
+function hasDirectProxy() {
+  return Boolean(C.directProxy && C.directProxy.server && C.directProxy.port);
+}
+
+/**
+ * 「直连静态 IP」节点：不经 Roxy/roxynet，直接连服务商的 socks5 静态代理。
+ * 建连走 dialer-proxy（= GPT-US-Jump 跳板组，默认 DIRECT）——
+ * 哪天国内直连被阻断，把跳板组切到订阅美国节点即可，不必改这里。
+ */
+function directNodeLines() {
+  const d = C.directProxy;
+  const lines = [
+    `  - name: ${C.directNodeName}`,
+    '    type: socks5',
+    `    server: ${d.server}`,
+    `    port: ${d.port}`,
+  ];
+  if (d.username) lines.push(`    username: ${d.username}`);
+  if (d.password) lines.push(`    password: ${d.password}`);
+  lines.push('    udp: true', `    dialer-proxy: ${C.directJumpGroup}`);
+  return lines;
+}
+
 function buildNodeYaml(port, dirId) {
-  return [
+  const lines = [
     '# Managed by HelpUseCodexAndGPTAPI (program A). 由程序A自动生成，请勿手改。',
     'prepend:',
     `  - name: ${C.nodeName}`,
@@ -25,16 +49,17 @@ function buildNodeYaml(port, dirId) {
     `    username: ${dirId}`,
     `    password: ${dirId}`,
     '    udp: true',
-    'append: []',
-    'delete: []',
-    '',
-  ].join('\n');
+  ];
+  if (hasDirectProxy()) lines.push(...directNodeLines());
+  lines.push('append: []', 'delete: []', '');
+  return lines.join('\n');
 }
 
 function buildGroupYaml(backupNode) {
   const members = [`${C.nodeName}`];
+  if (hasDirectProxy()) members.push(C.directNodeName);
   if (C.groupType === 'fallback' && backupNode && backupNode !== C.nodeName) members.push(`'${backupNode}'`);
-  return [
+  const lines = [
     '# Managed by HelpUseCodexAndGPTAPI (program A). 由程序A自动生成，请勿手改。',
     'prepend:',
     `  - name: ${C.groupName}`,
@@ -42,10 +67,22 @@ function buildGroupYaml(backupNode) {
     `    proxies: [${members.join(', ')}]`,
     `    url: ${C.healthCheckUrl}`,
     `    interval: ${C.healthCheckInterval}`,
-    'append: []',
-    'delete: []',
-    '',
-  ].join('\n');
+  ];
+  // 跳板兜底组：GPT-US-Direct 的建连出口。默认 DIRECT（直接连静态代理）；
+  // 直连被阻断时在 Clash 界面切到订阅美国节点即可（等价原 roxynet "经系统代理跳板"的链路）。
+  if (hasDirectProxy()) {
+    const jumpMembers = ['DIRECT'];
+    if (backupNode && backupNode !== C.nodeName && backupNode !== C.directNodeName) jumpMembers.push(`'${backupNode}'`);
+    lines.push(
+      `  - name: ${C.directJumpGroup}`,
+      '    type: select',
+      `    proxies: [${jumpMembers.join(', ')}]`,
+      `    url: ${C.healthCheckUrl}`,
+      `    interval: ${C.healthCheckInterval}`
+    );
+  }
+  lines.push('append: []', 'delete: []', '');
+  return lines.join('\n');
 }
 
 function buildRulesYaml() {
@@ -99,4 +136,4 @@ function syncProfile(port, dirId, backupNode) {
   return { changed, unchanged };
 }
 
-module.exports = { syncProfile, slotPath, buildNodeYaml, buildGroupYaml, buildRulesYaml };
+module.exports = { syncProfile, slotPath, buildNodeYaml, buildGroupYaml, buildRulesYaml, hasDirectProxy };
